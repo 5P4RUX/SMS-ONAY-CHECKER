@@ -135,15 +135,14 @@ def scan_accounts(file_name, bot_token, chat_id, success_message):
     ]
 
     failed_conditions = [
-    "Login Failed!\",\"message\":\"Please check your email and password and try again.",
-    "{\"success\":false,\"",
-    "Please check your email and password and try again."
-]
-
-success_conditions = [
-    "Login Successful!",
-    "You have successfully logged in."
-]
+        "Login Failed!\",\"message\":\"Please check your email and password and try again.",
+        "{\"success\":false,\"",
+        "Please check your email and password and try again."
+    ]
+    success_conditions = [
+        "Login Successful!",
+        "You have successfully logged in."
+    ]
 
     for email, password in credentials:
         user_agent = random.choice(user_agents)
