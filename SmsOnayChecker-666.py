@@ -34,7 +34,7 @@ def read_credentials_from_file(file_name):
                     credentials.append(parts)
                 else:
                     print(RED + f"❌ Invalid Format: {line.strip()} - Expected format email:password")
-        return credentials
+            return credentials
     except FileNotFoundError:
         print(RED + "❌ File not found!")
         return []
