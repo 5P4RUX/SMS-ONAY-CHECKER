@@ -18,7 +18,7 @@ RESET = Style.RESET_ALL
 def print_banner(title):
     os.system('clear')
     print(GREY)
-    print(pyfiglet.figlet_format(title, font='smslant') + f"{GREEN}                       Github: SPARUX-666 </>\n")
+    print(pyfiglet.figlet_format(title, font='smslant') + f"{GREEN}                       Github: 5P4RUX </>\n")
     print(f"{GREEN}{'━'*67}{RESET}")
 
 print_banner('SmsOnayLogin+')
